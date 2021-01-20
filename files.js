@@ -1,13 +1,17 @@
 const fs = require('fs');
 const defaultPath = './time_config.json';
 
-exports.saveConfig = async (config) => {
+const saveConfig = async (config) => {
+
+    const previousConfigArr = await getConfig()
 
     const date = config.date
     const menu = config.menu
 
+    if (!isMenuExist(previousConfigArr , menu)) previousConfigArr.push({ date: date, menu: menu })
+
     return new Promise(res => {
-        fs.writeFile(defaultPath, JSON.stringify({ date: date, menu: menu }), e => {
+        fs.writeFile(defaultPath, JSON.stringify(previousConfigArr), e => {
             if (e) {
                 throw new Error()
             }
@@ -16,6 +20,19 @@ exports.saveConfig = async (config) => {
         })
     })
 }
+
+const deleteConfig  = async ()=> {
+    try {
+        if(await isFileExist()){
+            fs.unlinkSync(defaultPath)
+            console.log('주말 파일 삭제 완료')
+        }
+      } catch(err) {
+        console.error(`deleteConfig err: ${err}`)
+      }
+}
+
+const isMenuExist = (arr, newMenu)=> arr.find(({menu})=>menu === newMenu)
 
 async function isFileExist() {
     return new Promise((res, rej) => {
@@ -26,7 +43,7 @@ async function isFileExist() {
     })
 }
 
-exports.getConfig = async () => {
+const getConfig = async () => {
 
     try {
         const fileExist = await isFileExist()
@@ -34,13 +51,18 @@ exports.getConfig = async () => {
         if (fileExist) {
             const json = fs.readFileSync(defaultPath, 'utf-8')
             if (json) return JSON.parse(json)
-            return false
+            return []
         }
-        return false
+        return []
     } catch (e) {
         console.error(e)
-        return false
+        return []
     }
 }
 
-
+module.exports = {
+    isMenuExist: isMenuExist,
+    getConfig:getConfig,
+    saveConfig:saveConfig,
+    deleteConfig:deleteConfig
+}

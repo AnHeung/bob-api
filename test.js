@@ -4,12 +4,11 @@ const TEST_WEBHOOK = 'https://discord.com/api/webhooks/801324891391524874/s4lB8V
 const WEBHOOK = 'https://discord.com/api/webhooks/801330364571713578/Cv_wx2l5MZHyJ99ZXfzM8ZIeLZxV-wuLg6_0lH9VsKU-lBaZbn1zrYYz-saQURrZ4aWs'
 const axios = require('axios');
 const moment = require('moment');
-const {getConfig , saveConfig} = require('./files')
+const { getConfig, saveConfig, isMenuExist, deleteConfig } = require('./files')
 const scheduler = require('node-schedule');
 const BOB_API_NAME = '밥API'
 
-
-const test = [
+const menuArr = [
     "수제비",
     "05",
     "라김",
@@ -25,14 +24,20 @@ const test = [
     "갈비탕"
 ];
 
-const getRandomValue = ()=>test[Math.floor(Math.random() * test.length)]
+const getRandomValue = () => menuArr[Math.floor(Math.random() * menuArr.length)]
 
 const randomMenu = async () => {
     if (!isWeekend()) {
         const newMenuConfig = await getNotDuplicateValue()
         const date = getToday()
-        const result = await sendMessage(newMenuConfig)
+        const result = await sendMessage('day',newMenuConfig)
         if (result) await saveConfig({ date: date, menu: newMenuConfig.newMenu })
+    } else {
+        if (isSunday()) {
+            const configArr = await getConfig()
+            await sendMessage('week' ,configArr)
+            await deleteConfig()
+        }
     }
 }
 
@@ -41,30 +46,37 @@ const isWeekend = () => {
     const isWeekend = (currentDay === 6 || currentDay === 7)
     console.log(`오늘은 일주일중 : ${currentDay} isWeekend ${isWeekend}`)
 }
+const isSunday = () => new Date().getDay() === 7
 
 const getToday = () => moment().format("MM-DD")
 
 const getNotDuplicateValue = async () => {
+
     let newMenu = getRandomValue()
-    const menuConfig = await getConfig()
-    let previousMenu = getRandomValue()
-    if(menuConfig){
-        previousMenu = menuConfig.menu
-        while(true){
-            if(previousMenu && previousMenu === newMenu)newMenu = getRandomValue()
+    const menuConfigArr = await getConfig()
+    let previousMenu = '전에 먹은 메뉴 없음'
+
+    if (menuConfigArr && menuConfigArr.length > 0) {
+        while (true) {
+            if (isMenuExist(menuConfigArr, newMenu)) newMenu = getRandomValue()
             else break;
         }
+        previousMenu = menuConfigArr[menuConfigArr.length - 1].menu || '메뉴 없음'
     }
-    return {newMenu:newMenu , previousMenu:previousMenu}
+    console.log(`previousMenu : ${previousMenu} newMenu : ${newMenu}`)
+    return { newMenu: newMenu, previousMenu: previousMenu }
 }
 
 
-const sendMessage = async (newMenuConfig) => {
+const sendMessage = async (type, newMenuConfig) => {
+
+    const content = type === 'week' ? `주간 보고 : ${JSON.stringify(newMenuConfig)}`
+     : `지난번 먹은 메뉴 : ${newMenuConfig.previousMenu} || 오늘의 랜덤 메뉴: ${newMenuConfig.newMenu}`
 
     const params = {
         username: BOB_API_NAME,
         avatar_url: "",
-        content: `지난번 먹은 메뉴 : ${newMenuConfig.previousMenu} || 오늘의 랜덤 메뉴: ${newMenuConfig.newMenu}`
+        content: content
     }
 
     return await axios.post(TEST_WEBHOOK, params)
@@ -75,5 +87,5 @@ const sendMessage = async (newMenuConfig) => {
         })
 }
 
-scheduler.scheduleJob("00 12* * *", randomMenu)
+scheduler.scheduleJob("*/1 * * * *", randomMenu)
 
