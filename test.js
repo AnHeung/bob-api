@@ -46,6 +46,7 @@ const isWeekend = () => {
     const isWeekend = (currentDay === 6 || currentDay === 7)
     console.log(`오늘은 일주일중 : ${currentDay} isWeekend ${isWeekend}`)
 }
+
 const isSunday = () => new Date().getDay() === 7
 
 const getToday = () => moment().format("MM-DD")
