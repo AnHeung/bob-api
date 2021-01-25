@@ -64,11 +64,12 @@ const randomMenu = async () => {
 
 const isWeekend = () => {
     const currentDay = new Date().getDay()
-    const isWeekend = (currentDay === 6 || currentDay === 7)
+    const isWeekend = (currentDay === 6 || currentDay === 0)
     console.log(`오늘은 일주일중 : ${currentDay} isWeekend ${isWeekend}`)
+    return isWeekend
 }
 
-const isSunday = () => new Date().getDay() === 7
+const isSunday = () => new Date().getDay() === 6
 
 const getToday = () => moment().format("MM-DD")
 
