@@ -8,6 +8,8 @@ const { getConfig, saveConfig, isMenuExist, deleteConfig } = require('./files')
 const scheduler = require('node-schedule');
 const BOB_API_NAME = '밥API'
 
+
+
 const menuArr = [
     "수제비",
     "05",
@@ -24,18 +26,37 @@ const menuArr = [
     "갈비탕"
 ];
 
+
+const configureBobBot = () => {
+
+    const client = new Discord.Client();
+    
+    client.on('ready', () => {
+        console.log(`Logged in as ${client.user.tag}!`);
+    });
+
+    client.on('message', msg => {
+        if (msg.content === '$메뉴검색') {
+            msg.reply(menuArr);
+        }
+    });
+
+    client.login(TOKEN); //BUILD-A-BOT 생성 후 발급된 토큰(Token) 
+
+}
+
 const getRandomValue = () => menuArr[Math.floor(Math.random() * menuArr.length)]
 
 const randomMenu = async () => {
     if (!isWeekend()) {
         const newMenuConfig = await getNotDuplicateValue()
         const date = getToday()
-        const result = await sendMessage('day',newMenuConfig)
+        const result = await sendMessage('day', newMenuConfig)
         if (result) await saveConfig({ date: date, menu: newMenuConfig.newMenu })
     } else {
         if (isSunday()) {
             const configArr = await getConfig()
-            await sendMessage('week' ,configArr)
+            await sendMessage('week', configArr)
             await deleteConfig()
         }
     }
@@ -72,7 +93,7 @@ const getNotDuplicateValue = async () => {
 const sendMessage = async (type, newMenuConfig) => {
 
     const content = type === 'week' ? `주간 보고 : ${JSON.stringify(newMenuConfig)}`
-     : `지난번 먹은 메뉴 : ${newMenuConfig.previousMenu} || 오늘의 랜덤 메뉴: ${newMenuConfig.newMenu}`
+        : `지난번 먹은 메뉴 : ${newMenuConfig.previousMenu} || 오늘의 랜덤 메뉴: ${newMenuConfig.newMenu}`
 
     const params = {
         username: BOB_API_NAME,
@@ -88,5 +109,6 @@ const sendMessage = async (type, newMenuConfig) => {
         })
 }
 
+configureBobBot()
 scheduler.scheduleJob("*/1 * * * *", randomMenu)
 
