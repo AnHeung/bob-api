@@ -3,27 +3,32 @@ const TOKEN = 'ODAxMzE5NDc1MjUyODIyMDE2.YAe86g.5nGtjkhT9dmU4uGQTda57QgtKiQ';
 const TEST_WEBHOOK = 'https://discord.com/api/webhooks/801324891391524874/s4lB8ViZ95MU3YztzvIuOIykfzIqYxJACdebrG6lU06WFPzFcZEfARrHxBlFsVlkej4W'
 const WEBHOOK = 'https://discord.com/api/webhooks/801330364571713578/Cv_wx2l5MZHyJ99ZXfzM8ZIeLZxV-wuLg6_0lH9VsKU-lBaZbn1zrYYz-saQURrZ4aWs'
 const axios = require('axios');
-const moment = require('moment');
-const { getConfig, saveConfig, isMenuExist, deleteConfig } = require('./files')
+
+const {getToday , isSunday , isWeekend} = require('./utils');
+const { getConfig, saveConfig, isMenuExist, deleteConfig , deleteTodayConfig } = require('./files')
 const scheduler = require('node-schedule');
 const BOB_API_NAME = '밥API'
-
 
 
 const menuArr = [
     "수제비",
     "05",
-    "라김",
-    "전라도",
-    "육칼",
-    "돈까스",
-    "밥장인",
-    "짱개",
+    "짜장후루룩",
+    "킹내식당1에이스한식뷔페 에이스테크노3차",
+    "킹내식당2정인21 이스페이스 b04호" ,
+    "설악추어탕",
+    "진순대국",
+    "뽀끼쌀롱",
+    "황태장인",
+    "북촌손만두",
+    "멘무샤(돈까스)",
+    "놀부맑은설렁탕담다",
+    "생선집 이앤씨벤처드림타워6차",
+    "북촌손만두",
+    "짱깨1자금성",
+    "짱깨2량",
     "햄버거",
     "담미온",
-    "여수",
-    "구내식당",
-    "갈비탕"
 ];
 
 
@@ -35,9 +40,13 @@ const configureBobBot = () => {
         console.log(`Logged in as ${client.user.tag}!`);
     });
 
-    client.on('message', msg => {
+    client.on('message', async msg => {
         if (msg.content === '$메뉴검색') {
             msg.reply(menuArr);
+        }else if(msg.content === '$다시'){
+            await retryMenu();
+        }else if(msg.content === '$창민'){
+            msg.reply('노답');
         }
     });
 
@@ -62,16 +71,17 @@ const randomMenu = async () => {
     }
 }
 
-const isWeekend = () => {
-    const currentDay = new Date().getDay()
-    const isWeekend = (currentDay === 6 || currentDay === 0)
-    console.log(`오늘은 일주일중 : ${currentDay} isWeekend ${isWeekend}`)
-    return isWeekend
+const retryMenu = async () => {
+    if (!isWeekend()) {
+        await deleteTodayConfig();
+        const newMenuConfig = await getNotDuplicateValue()
+        const date = getToday()
+        const result = await sendMessage('day', newMenuConfig)
+        if (result) await saveConfig({ date: date, menu: newMenuConfig.newMenu })
+    } 
 }
 
-const isSunday = () => new Date().getDay() === 6
 
-const getToday = () => moment().format("MM-DD")
 
 const getNotDuplicateValue = async () => {
 
@@ -102,7 +112,7 @@ const sendMessage = async (type, newMenuConfig) => {
         content: content
     }
 
-    return await axios.post(TEST_WEBHOOK, params)
+    return await axios.post(WEBHOOK, params)
         .then(true)
         .catch(e => {
             console.error(`sendMessage error : ${e}`)
@@ -111,5 +121,5 @@ const sendMessage = async (type, newMenuConfig) => {
 }
 
 configureBobBot()
-scheduler.scheduleJob("*/1 * * * *", randomMenu)
+scheduler.scheduleJob("00 12 * * *", randomMenu)
 

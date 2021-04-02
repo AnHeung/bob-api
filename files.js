@@ -1,5 +1,6 @@
 const fs = require('fs');
 const defaultPath = './time_config.json';
+const {getToday} = require('./utils');
 
 const saveConfig = async (config) => {
 
@@ -29,6 +30,29 @@ const deleteConfig  = async ()=> {
         }
       } catch(err) {
         console.error(`deleteConfig err: ${err}`)
+      }
+}
+
+const deleteTodayConfig  = async ()=> {
+    try {
+        if(await isFileExist()){
+            const previousConfigArr = await getConfig()
+            const today = getToday()
+            const updateConfigArr = previousConfigArr.filter(({date})=>date != today);
+
+            return new Promise(res => {
+                fs.writeFile(defaultPath, JSON.stringify(updateConfigArr), e => {
+                    if (e) {
+                        throw new Error()
+                    }
+                    console.log('파일 저장 성공')
+                    res()
+                })
+            })
+
+        }
+      } catch(err) {
+        console.error(`deleteTodayConfig err: ${err}`)
       }
 }
 
@@ -64,5 +88,6 @@ module.exports = {
     isMenuExist: isMenuExist,
     getConfig:getConfig,
     saveConfig:saveConfig,
-    deleteConfig:deleteConfig
+    deleteConfig:deleteConfig,
+    deleteTodayConfig:deleteTodayConfig
 }
